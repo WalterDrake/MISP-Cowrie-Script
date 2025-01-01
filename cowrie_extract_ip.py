@@ -2,7 +2,7 @@ import os
 import json
 
 # azhlm
-# 31 December 2024
+# 3 Dec 2024
 # Ver. 1.0
 
 def extract_ip(folder):
@@ -19,11 +19,11 @@ def extract_ip(folder):
                     except json.JSONDecodeError:
                         pass 
     return result
-    
+
 # Cowrie JSON Log Parser
 # Josh Jobe
 # 3 Mar 2024
-# Ver. 1.0
+# Ver. 1.0    
 
 def search_logs_by_source_ip(source_ip, folder):
     results = []
@@ -82,20 +82,40 @@ def main():
         print("Folder not found.")
         return
     
-    ip_list = extract_ip(folder_path)
-    
-    # Generate Snort 3 rules
-    rule_template = 'drop ip [{}] any -> $HOME_NET any (msg:"Blocked source IP"; rev:1;)'
-    rules = rule_template.format(",".join(ip_list))
+    while True:
+        choice = input("Enter 1 to search by Source IP, 2 to search by Session ID, 3 to export rules: ")
+        if choice == '1':
+            source_ip = input("Enter the Source IP: ")
+            results = search_logs_by_source_ip(source_ip, folder_path)
+            break
+        elif choice == '2':
+            session_id = input("Enter the Session ID: ")
+            results = search_logs_by_session_id(session_id, folder_path)
+            break
+        elif choice == '3':
+            
+            ip_list = extract_ip(folder_path)
 
-    # Save to a file or print the rule
-    try:
-        with open("/usr/local/etc/snort/rules/block_ips.rules", "w") as file:
-            file.write(rules + "\n")
-        print("[!] Successfully created rule file.")
-        print("[!] Rule:",rules)
-    except Exception as e:
-        print("[*] Got error:", e)
+            # Generate Snort 3 rules
+            rule_template = 'drop ip [{}] any -> $HOME_NET any (msg:"Blocked source IP"; rev:1;)'
+            rules = rule_template.format(",".join(ip_list))
+
+            # Save to a file or print the rule
+            try:
+                with open("/usr/local/etc/snort/rules/block_ips.rules", "w") as file:
+                    file.write(rules + "\n")
+                print("[!] Successfully created rule file.")
+                print("[!] Rule:",rules)
+            except Exception as e:
+                print("[*] Got error:", e)
+            break
+        else:
+            print("Invalid choice. Please enter 1, 2 or 3.")
+
+        if choice == '1' or choice == '2':
+            print("Search results:")
+            for result in results:
+                print(format_log_entry(result))
 
 if __name__ == "__main__":
     main()
